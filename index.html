@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>しりとり盤面ゲーム </title>
+<title>しりとり盤ゲーム 完全版</title>
 <style>
 body { font-family:sans-serif; padding:10px; }
 #modePage { text-align:center; }
@@ -121,11 +121,11 @@ button{ margin:5px; padding:6px 12px; }
 <body>
 
 <div id="modePage">
-<h2>しりとり盤面ゲーム　(iPad,PC推奨版)</h2>
+<h2>しりとり盤面ゲーム　(iPad、PC推奨版)</h2>
 
 <p>モード選択:</p>
-  <label><input type="radio" name="mode" value="human" id="modeHuman" onchange="toggleTurnSelect()"> 人間 vs 人間</label>
-  <label><input type="radio" name="mode" value="ai" id="modeAI" onchange="toggleTurnSelect()"> 人間 vs AI</label>
+  <label><input type="radio" name="mode" value="human" id="modeHuman" onchange="toggleTurnSelect()"> 人間同士で対戦</label>
+  <label><input type="radio" name="mode" value="ai" id="modeAI" onchange="toggleTurnSelect()"> AIと対戦</label>
 
  
   <div id="humanNames" style="display:none;">
@@ -154,8 +154,23 @@ button{ margin:5px; padding:6px 12px; }
     </label>
   </div>    
   
+<br><br> 
+ <button type="button" onclick="showRules()" style="margin-top: 20px; padding: 5px 15px; cursor: pointer;">ルールを読む</button> 
+  
+  
 <br><br>
 <button onclick="startGame()">スタート</button>
+</div>  
+  
+<div id="rule-screen" style="display: none; text-align: center; padding: 20px; background-color: white;">
+    <p style="font-size: 14px; color: #888;">▼ 下にスクロールして読む</p>
+    
+    <img src="rule1.png" style="width: 90%; max-width: 500px; margin-bottom: 10px; border: 1px solid #ccc;">
+    <br>
+    <img src="rule2.png" style="width: 90%; max-width: 500px; margin-bottom: 20px; border: 1px solid #ccc;">
+    
+    <br>
+    <button type="button" onclick="backToMenu()" style="padding: 10px 20px; cursor: pointer;">メニューに戻る</button>
 </div>  
   
 
@@ -1217,6 +1232,20 @@ function toggleTrajectory() {
   // バーの状態が変わったので、再描画（または消去）を実行する
   drawLines("lineCanvas", 50, 2);
 }  
+  
+function showRules() {
+    // 画面上のすべての要素を一旦隠すために、メインのコンテナを隠すか、
+    // もしくはモード選択のdivにIDをつけてそれを隠します。
+    document.querySelector('body > div').style.display = 'none'; 
+    document.getElementById('rule-screen').style.display = 'block';
+    window.scrollTo(0, 0);
+}
+
+function backToMenu() {
+    document.getElementById('rule-screen').style.display = 'none';
+    document.querySelector('body > div').style.display = 'block';
+}  
+  
   
   
 const dictionaryEasy = {  "あ":["あいす","あさがお","あんこう","あめ","あらいぐま","あか","あお","あおぞら"],
