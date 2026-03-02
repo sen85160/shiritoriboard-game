@@ -1063,7 +1063,7 @@ function showResult(result, reason){
     const c = document.createElement("div");
     c.className = "resultCell";
     c.textContent = board.children[i].textContent; 
-    if(i === lastPlacedIdx) c.classList.add("last");
+    if(i === lastIndex) c.classList.add("last");
     boardCopy.appendChild(c);
   }
 
