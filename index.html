@@ -609,11 +609,7 @@ document.getElementById("humanValidCount").textContent = countHumanValidMoves();
     return;
   }
 
-  // 盤面いっぱいなら勝利
-  if(isBoardFull()){
-    showResult("win","盤面をすべて埋めたため");
-    return;
-  }
+ 
  
   // ここで両者の合法手チェックを行う
   const dict = getCurrentDictionary();
