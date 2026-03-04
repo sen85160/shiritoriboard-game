@@ -128,31 +128,44 @@ button{ margin:5px; padding:6px 12px; }
   <label><input type="radio" name="mode" value="ai" id="modeAI" onchange="toggleTurnSelect()"> AIと対戦</label>
 
  
-  <div id="humanNames" style="display:none;">
-  <p>プレイヤー名入力:</p>
-  <input id="playerAName" placeholder="プレイヤーAの名前">
-  <input id="playerBName" placeholder="プレイヤーBの名前">
-  <p>先攻を選択:</p>
-  <label><input type="radio" name="humanOrder" value="A" checked> 左の方が先攻</label>
-  <label><input type="radio" name="humanOrder" value="B"> 右の方が先攻</label>
-</div>
+ <div id="humanNames" style="display:none;">
+    <p>プレイヤー名入力:</p>
+    <input id="playerAName" placeholder="プレイヤーAの名前">
+    <input id="playerBName" placeholder="プレイヤーBの名前">
+    
+    <p>時間制限:</p>
+    <label><input type="radio" name="useTimer" value="no"  onchange="toggleTimerSettings()"> なし</label>
+    <label><input type="radio" name="useTimer" value="yes"  onchange="toggleTimerSettings()"> あり</label>
+    
+    <div id="timerSettings" style="display:none; margin-top:10px;">
+        <select id="limitMinutes">
+            <option value="3">3分</option>
+            <option value="5">5分</option>
+            <option value="10">10分</option>
+            <option value="15">15分</option>
+        </select>
+    </div>
 
-<div id="turnSelect" style="display:none;">
-<p>手番選択:</p>
-<label><input type="radio" name="order" value="first" > 人間が先手</label>
-<label><input type="radio" name="order" value="second"> 人間が後手</label>
+    <p>先攻を選択:</p>
+    <label><input type="radio" name="humanOrder" value="A" checked> 左の方が先攻</label>
+    <label><input type="radio" name="humanOrder" value="B"> 右の方が先攻</label>
+</div> <div id="turnSelect" style="display:none;">
+    <p>手番選択:</p>
+    <label><input type="radio" name="order" value="first" checked> 人間が先手</label>
+    <label><input type="radio" name="order" value="second"> 人間が後手</label>
 </div>
 
 <div id="aiSettings" style="display:none;">
+    <p>AI設定:</p>
     <label>AI強さ:
-      <select id="aiStrength">
-        <option value="1">弱</option>
-        <option value="2">中</option>
-        <option value="3">強</option>
-        <option value="4">最強</option>
-      </select>
+        <select id="aiStrength">
+            <option value="1">弱</option>
+            <option value="2">中</option>
+            <option value="3">強</option>
+            <option value="4">最強</option>
+        </select>
     </label>
-  </div>    
+</div>   
   
 <br><br> 
  <button type="button" onclick="showRules()" style="margin-top: 20px; padding: 5px 15px; cursor: pointer;">ルールを読む</button> 
@@ -180,6 +193,14 @@ button{ margin:5px; padding:6px 12px; }
 
 <div>
 <p>現在のプレイヤー: <span id="currentPlayer">A</span></p>
+ <div id="timerArea" style="display: none; margin: 10px 0; font-family: monospace; font-size: 22px; font-weight: bold;">
+  <div id="timerA" style="color: #ff4d4d; display: inline-block; margin-right: 20px;">
+    <span id="labelA">A</span>: <span id="timeLeftA">--:--</span>
+  </div>
+  <div id="timerB" style="color: #4d4dff; display: inline-block;">
+    <span id="labelB">B</span>: <span id="timeLeftB">--:--</span>
+  </div>
+</div>
 <p>現在の開始文字: <span id="currentChar">-</span></p>
 
 
@@ -218,6 +239,7 @@ button{ margin:5px; padding:6px 12px; }
     有効回答数: <span id="humanValidCount">0</span>
   </div>
 </div>
+ 
 
 <button id="surrenderButton" data-player="A" onclick="surrender(this)">降参する</button>
   
@@ -250,6 +272,10 @@ let usedWords=new Set();
 let lastPlacedIdx=24;
 
 let moveHistory = []; // 軌跡を保存する配列  
+let timerInterval = null;
+let playerATime = 0;
+let playerBTime = 0;
+let isTimerActive = false;  
   
 const dirSymbol={
 right:"→", left:"←", up:"↑", down:"↓",
@@ -289,7 +315,58 @@ function toggleTurnSelect(){
   document.getElementById("humanNames").style.display = isAI ? "none" : "block";
 }  
   
+// 設定画面の出し分け
+function toggleTimerSettings() {
+  const useTimer = document.querySelector('input[name="useTimer"]:checked').value;
+  document.getElementById("timerSettings").style.display = (useTimer === "yes") ? "block" : "none";
+}
+
+// 時間を減らす処理 (まるごと書き換え)
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (gameOver) return;
+
+    // 現在画面に表示されている名前を取得
+    const nowPlaying = currentPlayerDisplay.textContent;
+
+    // Aさんのターンの場合
+    if (nowPlaying === playerAName) {
+      playerATime--;
+      if (playerATime <= 0) timeUp(playerAName);
+    } 
+    // Bさんのターンの場合
+    else if (nowPlaying === playerBName) {
+      playerBTime--;
+      if (playerBTime <= 0) timeUp(playerBName);
+    }
+    
+    updateTimerDisplay(); // 毎秒、両方の表示を更新
+  }, 1000);
+}
+
   
+function updateTimerDisplay() {
+  const format = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const aElem = document.getElementById("timeLeftA");
+  const bElem = document.getElementById("timeLeftB");
+  
+  if (aElem) aElem.textContent = format(playerATime);
+  if (bElem) bElem.textContent = format(playerBTime);
+}
+
+// 時間切れの処理
+function timeUp(loserName) {
+  clearInterval(timerInterval);
+  const winnerName = (loserName === playerAName ? playerBName : playerAName);
+  currentPlayerDisplay.textContent = winnerName; // 勝者をセット
+  showResult("win", `${loserName}が時間切れのため`);
+}  
 
 function normalizeChar(c){
 const m={"ゃ":"や","ゅ":"ゆ","ょ":"よ","ぁ":"あ","ぃ":"い","ぅ":"う","ぇ":"え","ぉ":"お","っ":"つ"};
@@ -307,9 +384,24 @@ return normalizeChar(chars[chars.length-1]);
 }
 
 function createBoard(){
+if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  // 2. タイマーが有効な場合、時間を初期設定（選択された分数）に戻す
+  if (isTimerActive) {
+    const limitSelect = document.getElementById("limitMinutes");
+    const mins = parseInt(limitSelect.value) || 3;
+    playerATime = mins * 60;
+    playerBTime = mins * 60;
+    
+    // 画面上の数字を 03:00 などの初期状態に更新する
+    updateTimerDisplay();
+  }  
 board.innerHTML="";
 logBox.innerHTML="";
-usedWords.clear();
+usedWords.clear()
 moveHistory = []; // 履歴をリセット
 const canvas = document.getElementById("lineCanvas");
 if(canvas) {
@@ -373,7 +465,46 @@ if(mode === "ai") {
 } else {
   currentPlayerDisplay.textContent = humanFirst ? playerAName : playerBName;
 }
+// --- startGame 関数内の後半部分を以下に差し替え ---
+
+// ラジオボタンから「あり・なし」を取得
+const useTimerRadio = document.querySelector('input[name="useTimer"]:checked');
+  const useTimer = useTimerRadio ? useTimerRadio.value : "no";
+
+  if (mode === "human" && useTimer === "yes") {
+    isTimerActive = true;
+    const limitSelect = document.getElementById("limitMinutes");
+    const mins = parseInt(limitSelect.value) || 3;
+    
+    playerATime = mins * 60;
+    playerBTime = mins * 60;
+
+    // ラベル（名前）を表示に反映
+    document.getElementById("labelA").textContent = playerAName;
+    document.getElementById("labelB").textContent = playerBName;
+
+    // 先攻・後攻による色分け (humanFirst は startGame の上の方で決定されている変数)
+    if (humanFirst) {
+      document.getElementById("timerA").style.color = "#ff4d4d"; // A 赤
+      document.getElementById("timerB").style.color = "#4d4dff"; // B 青
+    } else {
+      document.getElementById("timerA").style.color = "#4d4dff"; // A 青
+      document.getElementById("timerB").style.color = "#ff4d4d"; // B 赤
+    }
+
+    // タイマーエリア全体を表示
+    document.getElementById("timerArea").style.display = "block";
+    
+    updateTimerDisplay();
+  } else {
+    isTimerActive = false;
+    // タイマーエリアがあれば隠す
+    const tArea = document.getElementById("timerArea");
+    if(tArea) tArea.style.display = "none";
+    if (timerInterval) clearInterval(timerInterval);
+  }
 }
+ 
   
   
 
@@ -385,10 +516,13 @@ board.children[24].textContent=lastChar;
 currentCharDisplay.textContent=lastChar;
 updateStartHighlight();
 document.getElementById("firstCharInput").disabled=true;
-
+if(mode === "human" && isTimerActive) {
+    startTimer();
+  }
 if(mode==="ai" && !humanIsFirst){
 setTimeout(aiTurn,300);
 }
+  
 }
   
  
@@ -1021,6 +1155,7 @@ function isBoardFull(){
  
 function showResult(result, reason){
   gameOver = true;
+  if (timerInterval) clearInterval(timerInterval);
 
   const overlay = document.getElementById("resultOverlay");
   const box = document.getElementById("resultBox");
@@ -19262,7 +19397,7 @@ const dictionaryHard ={
     "すきゃるぷ",
     "すきゃんだる",
     "すきやき",
-    "すきやきや",
+    "すきや",
     "すきゅーば",
     "すきる",
     "すきんけあ",
@@ -33655,7 +33790,7 @@ const dictionaryHard ={
     "まくろ",
     "まくろげんご",
     "まくろふぁーじ",
-    "まくわうり",
+    "まくどなるど",
     "まぐ",
     "まぐかっぷ",
     "まぐさ",
@@ -34186,7 +34321,7 @@ const dictionaryHard ={
     "まるかっこ",
     "まるがお",
     "まるがり",
-    "まるがりーた",
+    "まるかめ",
     "まるき",
     "まるきこえ",
     "まるきしずむ",
@@ -39977,6 +40112,7 @@ const dictionaryHard ={
     "ろっかー",
     "ろっかーるーむ",
     "ろっき",
+    "ろっきー",
     "ろっく",
     "ろっくふぁー",
     "ろっくんろーる",
