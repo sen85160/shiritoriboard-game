@@ -1157,23 +1157,55 @@ function showResult(result, reason){
   gameOver = true;
   if (timerInterval) clearInterval(timerInterval);
 
+ let hints = "";
+  // 「時間切れ」という言葉が含まれている場合、ヒントを作成
+  if (reason && reason.includes("時間切れ")) {
+    const possibleMoves = getValidMoves();
+    if (possibleMoves.length > 0) {
+      // 横並び用のスタイルを適用した単語リスト
+      const sampleMoves = possibleMoves.slice(0, 3).map(m => 
+        `<span style="background: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; white-space: nowrap;">${m.word} (${dirSymbol[m.dir]})</span>`
+      );
+      
+      // AI戦敗北（黒背景）かそれ以外かで色を変える
+      const hintStyle = (mode === "ai" && result === "lose") 
+        ? "color: #eee; background: #333; border: 1px solid #555;" 
+        : "color: #555; background: #f9f9f9; border: 1px solid #ccc;";
+
+      hints = `<br><br><div style="font-size:0.85em; padding:10px; border-radius:6px; margin-top:10px; ${hintStyle}">
+        <div style="margin-bottom:5px; font-weight:bold;">💡 時間があれば置けた単語の例:</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">${sampleMoves.join("")}</div>
+      </div>`;
+    }
+  }
+  const finalReason = reason + hints;
+
   const overlay = document.getElementById("resultOverlay");
   const box = document.getElementById("resultBox");
 
-  // クラス整理
   overlay.classList.remove("lose","win","show");
   overlay.classList.add(result);
   overlay.classList.add("show");
 
   box.innerHTML = "";
 
-  // 1. スクロールエリア(Content)と固定エリア(Footer)の箱を作成
   const resultContent = document.createElement("div");
   resultContent.className = "resultContent";
+ 
+  
+  // ★ AI戦で敗北した場合、リザルト全体を黒背景・白文字にするためのスタイル調整
+  if(mode === "ai" && result === "lose") {
+    resultContent.style.backgroundColor = "#222";
+    resultContent.style.color = "#fff";
+  }
+
   const resultFooter = document.createElement("div");
   resultFooter.className = "resultFooter";
+  // フッター（ボタンエリア）も色を合わせる
+  if(mode === "ai" && result === "lose") {
+    resultFooter.style.backgroundColor = "#333";
+  }
 
-  // 2. コンテンツエリアに内容を詰める
   const title = document.createElement("div");
   title.className = "bigTitle";
   if(mode === "human" && result === "win") {
@@ -1184,8 +1216,9 @@ function showResult(result, reason){
   resultContent.appendChild(title);
 
   const reasonText = document.createElement("p");
-  reasonText.textContent = "理由: " + reason;
+  reasonText.innerHTML = "理由: " + finalReason; 
   resultContent.appendChild(reasonText);
+
 
   // 盤面コピーの作成
   const boardCopy = document.createElement("div");
@@ -1299,25 +1332,40 @@ function showResult(result, reason){
   box.scrollTop = 0;
 }
     
-function surrender(button){
-  if(gameOver) return;
+function surrender(button) {
+  if (gameOver) return;
+  if (timerInterval) clearInterval(timerInterval);
 
-  if(mode === "ai"){
-    // AI戦の場合、人間が押したので即敗北
-    showResult("lose", "あなたが降参したため");
-  } else {
-    // 対人戦の場合
-    // 現在のプレイヤー表示を「勝者（降参していない方）」に書き換えてから結果を表示する
-    const currentPlayer = currentPlayerDisplay.textContent;
-    const winnerName = (currentPlayer === playerAName ? playerBName : playerAName);
-    const loserName = currentPlayer;
+  const loserName = currentPlayerDisplay.textContent;
+  let hints = "";
+  const possibleMoves = getValidMoves();
 
-    // 勝利表示のロジックが currentPlayerDisplay を参照しているため、
-    // 表示上のプレイヤーを勝者に切り替える
-    currentPlayerDisplay.textContent = winnerName;
+  if (possibleMoves.length > 0) {
+    const sampleMoves = possibleMoves.slice(0, 3).map(m => 
+      `<span style="background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1);">${m.word} (${dirSymbol[m.dir]})</span>`
+    );
     
-    showResult("win", `${loserName}が降参したため`);
+    // AI戦敗北時（黒背景）と通常時でスタイルが馴染むように調整
+    const hintStyle = (mode === "ai") 
+      ? "color: #eee; background: #333; border: 1px solid #555;" 
+      : "color: #555; background: #f9f9f9; border: 1px solid #ccc;";
+
+    hints = `<br><br><div style="font-size:0.85em; padding:10px; border-radius:6px; margin-top:10px; ${hintStyle}">
+      <div style="margin-bottom:5px; font-weight:bold;">💡 置けた単語の例:</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">${sampleMoves.join("")}</div>
+    </div>`;
   }
+
+  if (mode === "ai") {
+    showResult("lose", "あなたが降参したため" + hints);
+  } else {
+    const winnerName = (loserName === playerAName ? playerBName : playerAName);
+    currentPlayerDisplay.textContent = winnerName;
+    showResult("win", `${loserName}が降参したため` + hints);
+  }
+
+  // 4. 結果表示（reasonMessageにすべての情報が入った状態で送る）
+  showResult(resultType, reasonMessage);
 }
   
 function resetGame(){
@@ -19397,7 +19445,7 @@ const dictionaryHard ={
     "すきゃるぷ",
     "すきゃんだる",
     "すきやき",
-    "すきや",
+    "すきやきや",
     "すきゅーば",
     "すきる",
     "すきんけあ",
@@ -33790,7 +33838,7 @@ const dictionaryHard ={
     "まくろ",
     "まくろげんご",
     "まくろふぁーじ",
-    "まくどなるど",
+    "まくわうり",
     "まぐ",
     "まぐかっぷ",
     "まぐさ",
@@ -34321,7 +34369,7 @@ const dictionaryHard ={
     "まるかっこ",
     "まるがお",
     "まるがり",
-    "まるかめ",
+    "まるがりーた",
     "まるき",
     "まるきこえ",
     "まるきしずむ",
@@ -40112,7 +40160,6 @@ const dictionaryHard ={
     "ろっかー",
     "ろっかーるーむ",
     "ろっき",
-    "ろっきー",
     "ろっく",
     "ろっくふぁー",
     "ろっくんろーる",
