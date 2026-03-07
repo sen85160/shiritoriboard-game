@@ -121,9 +121,14 @@ button{ margin:5px; padding:6px 12px; }
     flex-direction: column;
     align-items: center;
   }
+  #container > div:first-child {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
   #board {
     grid-template-columns: repeat(7, calc((100vw - 90px) / 7));
-    margin: 0 auto;
   }
   .cell {
     width: calc((100vw - 90px) / 7);
@@ -135,6 +140,10 @@ button{ margin:5px; padding:6px 12px; }
   }
   #wordInput {
     width: 40vw;
+  }
+  #placeResetButtons {
+    display: flex;
+    flex-direction: row;
   }
   #resetButton {
     font-size: 12px;
