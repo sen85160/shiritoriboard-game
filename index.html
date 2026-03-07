@@ -122,11 +122,11 @@ button{ margin:5px; padding:6px 12px; }
     align-items: center;
   }
   #board {
-    grid-template-columns: repeat(7, calc((100vw - 40px) / 7));
+    grid-template-columns: repeat(7, calc((100vw - 90px) / 7));
   }
   .cell {
-    width: calc((100vw - 60px) / 7);
-    height: calc((100vw - 60px) / 7);
+    width: calc((100vw - 90px) / 7);
+    height: calc((100vw - 90px) / 7);
     font-size: 14px;
   }
   #logBox {
@@ -771,7 +771,7 @@ if(!isHiraganaOnly(word)){
     to: lineEndIdx,
     color: isSecondPlayer ? "rgba(0, 0, 255, 0.2)" : "rgba(255, 0, 0, 0.2)"
   });
-  const cellSize = window.innerWidth <= 600 ? (window.innerWidth - 60) / 7 : 50;
+  const cellSize = window.innerWidth <= 600 ? (window.innerWidth - 90) / 7 : 50;
 drawLines("lineCanvas", cellSize, 2);
   
 // ログに表示する名前を決定
