@@ -1462,17 +1462,15 @@ function resetGame(){
   
 function drawLines(canvasId, cellSize, gap) {
   const canvas = document.getElementById(canvasId);
-  const boardElem = document.getElementById("board");
-  const toggle = document.getElementById("showTrajectory"); // チェックボックス取得
-  
-  if (!canvas || !boardElem || !toggle) return; // 要素がない場合は何もしない
+  const toggle = document.getElementById("showTrajectory");
+  if (!canvas || !toggle) return;
 
   const ctx = canvas.getContext("2d");
-  canvas.width = boardElem.clientWidth;
-  canvas.height = boardElem.clientHeight;
+  const totalSize = 7 * cellSize + 6 * gap;
+  canvas.width = totalSize;
+  canvas.height = totalSize;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // チェックが外れていたらここで終了（描画しない）
   if (!toggle.checked) return;
 
   moveHistory.forEach(move => {
@@ -1483,7 +1481,7 @@ function drawLines(canvasId, cellSize, gap) {
 
     ctx.beginPath();
     ctx.strokeStyle = move.color;
-    ctx.lineWidth = 10; 
+    ctx.lineWidth = 10;
     ctx.lineCap = "round";
     ctx.moveTo(fC * (cellSize + gap) + cellSize / 2, fR * (cellSize + gap) + cellSize / 2);
     ctx.lineTo(tC * (cellSize + gap) + cellSize / 2, tR * (cellSize + gap) + cellSize / 2);
