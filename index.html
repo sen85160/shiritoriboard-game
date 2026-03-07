@@ -115,6 +115,27 @@ button{ margin:5px; padding:6px 12px; }
   margin-top:5px;
 }
   
+@media (max-width: 600px) {
+  #container {
+    flex-direction: column;
+    align-items: center;
+  }
+  #board {
+    grid-template-columns: repeat(7, calc((100vw - 20px) / 7));
+  }
+  .cell {
+    width: calc((100vw - 20px) / 7);
+    height: calc((100vw - 20px) / 7);
+    font-size: 14px;
+  }
+  #logBox {
+    width: 90vw;
+  }
+  #wordInput {
+    width: 40vw;
+  }
+}  
+  
   
 </style>
 </head>
@@ -222,6 +243,13 @@ button{ margin:5px; padding:6px 12px; }
 </select>
 <button onclick="placeWord()">置く</button>
 <button onclick="resetGame()">リセット</button>
+  
+<div id="dictAlert" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#f0f0f0; border:1px solid #aaa; border-radius:4px; padding:15px 20px; z-index:9999; text-align:center; box-shadow:2px 2px 6px rgba(0,0,0,0.3); min-width:300px;">
+  <p id="dictAlertMsg" style="margin:0 0 10px 0;"></p>
+  <button onclick="proposalWord()" style="background-color:#1a73e8; color:white; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;">提案する</button>
+<button onclick="closeDictAlert()" style="background-color:#1a73e8; color:white; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;">閉じる</button>
+</div>  
+  
 
 <div style="position: relative;">
   <canvas id="lineCanvas" style="position: absolute; top: 0; left: 0; pointer-events: none; z-index: 0;"></canvas>
@@ -624,14 +652,7 @@ if(!isHiraganaOnly(word)){
   return;
 }  
   
-  // 人間ターンの場合、辞書チェック
- if(!fromAI){
-  const dict = dictionaryHard; // ←ここを固定
-  if(!(dict[lastChar] || []).includes(word)){
-    alert("辞書にない単語です");
-    return;
-  }
-}
+ 
 
   if(usedWords.has(word)){
     alert("その単語は既に使用されています");
@@ -673,7 +694,24 @@ if(!isHiraganaOnly(word)){
     alert("必ず1マス以上新しく埋めてください");
     return;
   }
+  
+ if(!fromAI && getLastChar(word) === "ん"){
+  showResult("lose", "「ん」で終わる単語を置いたため");
+  return;
+} 
+  
 
+  if(!fromAI){
+  const dict = dictionaryHard;
+  if(!(dict[lastChar] || []).includes(word)){
+    document.getElementById("dictAlertMsg").textContent = `「${word}」は辞書にない単語です`;
+    document.getElementById("dictAlert").style.display = "block";
+    return;
+  }
+}
+ 
+  
+  
 
  // 実際に盤面に配置
   row = Math.floor(lastIndex/7);
@@ -722,7 +760,8 @@ if(!isHiraganaOnly(word)){
     to: lineEndIdx,
     color: isSecondPlayer ? "rgba(0, 0, 255, 0.2)" : "rgba(255, 0, 0, 0.2)"
   });
-  drawLines("lineCanvas", 50, 2);
+  const cellSize = window.innerWidth <= 600 ? (window.innerWidth - 20) / 7 : 50;
+drawLines("lineCanvas", cellSize, 2);
   
 // ログに表示する名前を決定
 let logName = currentPlayerDisplay.textContent;
@@ -842,7 +881,7 @@ function getValidMoves(){
 
     let baseRow = Math.floor(i / 7);
     let baseCol = i % 7;
-    let dictionary = getCurrentDictionary();
+    let dictionary = (mode === "human") ? dictionaryHard : getCurrentDictionary();
     let wordList = dictionary[lastChar] || [];
 
     for(let w of wordList){
@@ -1163,7 +1202,7 @@ function showResult(result, reason){
     const possibleMoves = getValidMoves();
     if (possibleMoves.length > 0) {
       // 横並び用のスタイルを適用した単語リスト
-      const sampleMoves = possibleMoves.slice(0, 3).map(m => 
+      const sampleMoves = getHintMoves(possibleMoves).map(m => 
         `<span style="background: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; white-space: nowrap;">${m.word} (${dirSymbol[m.dir]})</span>`
       );
       
@@ -1253,12 +1292,17 @@ function showResult(result, reason){
   // --- 再戦ボタン ---
   const retry = document.createElement("button");
   retry.textContent = "再戦";
-  retry.onclick = () => {
-    overlay.classList.remove("show","lose","win");
-    createBoard();
-    document.getElementById("firstCharInput").disabled = false;
-    document.getElementById("firstCharInput").value = "";
-  };
+ retry.onclick = () => {
+  overlay.classList.remove("show","lose","win");
+  createBoard();
+  document.getElementById("firstCharInput").disabled = false;
+  document.getElementById("firstCharInput").value = "";
+  if(mode === "ai"){
+    currentPlayerDisplay.textContent = humanIsFirst ? "あなた" : playerBName;
+  } else {
+    currentPlayerDisplay.textContent = humanFirst ? playerAName : playerBName;
+  }
+};
   resultFooter.appendChild(retry);
   
 // AIモードのときのみ「結果をシェア」ボタンを追加
@@ -1331,7 +1375,35 @@ function showResult(result, reason){
 
   box.scrollTop = 0;
 }
-    
+ 
+function closeDictAlert(){
+    document.getElementById("dictAlert").style.display = "none";
+}
+
+function proposalWord(){
+    // ここに後でGoogleフォーム連携を入れる
+    closeDictAlert();
+    alert("提案しました！ありがとうございます");
+}  
+  
+  
+function proposalWord(){
+  const word = document.getElementById("wordInput").value.trim();
+  const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSeZS_NojF6TXlY61gpPSmGPkrEpBnyLzmhmCnckh6_w2GbdDg/formResponse";
+  
+  fetch(formURL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `entry.1568441031=${encodeURIComponent(word)}`
+  });
+  
+  closeDictAlert();
+  alert("「" + word + "」を提案しました！ありがとうございます");
+}  
+  
+  
+  
 function surrender(button) {
   if (gameOver) return;
   if (timerInterval) clearInterval(timerInterval);
@@ -1341,7 +1413,7 @@ function surrender(button) {
   const possibleMoves = getValidMoves();
 
   if (possibleMoves.length > 0) {
-    const sampleMoves = possibleMoves.slice(0, 3).map(m => 
+    const sampleMoves = getHintMoves(possibleMoves).map(m => 
       `<span style="background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1);">${m.word} (${dirSymbol[m.dir]})</span>`
     );
     
@@ -1409,7 +1481,8 @@ function drawLines(canvasId, cellSize, gap) {
   
 function toggleTrajectory() {
   // バーの状態が変わったので、再描画（または消去）を実行する
-  drawLines("lineCanvas", 50, 2);
+  const cellSize = window.innerWidth <= 600 ? (window.innerWidth - 20) / 7 : 50;
+drawLines("lineCanvas", cellSize, 2);
 }  
   
 function showRules() {
@@ -1424,6 +1497,27 @@ function backToMenu() {
     document.getElementById('rule-screen').style.display = 'none';
     document.querySelector('body > div').style.display = 'block';
 }  
+  
+function getHintMoves(moves) {
+  if (moves.length <= 3) return moves;
+  
+  // 最短単語の中からランダムに1つ
+  const minLen = Math.min(...moves.map(m => m.word.length));
+  const shortest = moves.filter(m => m.word.length === minLen);
+  const pick1 = shortest[Math.floor(Math.random() * shortest.length)];
+  
+  // 最長単語の中からランダムに1つ
+  const maxLen = Math.max(...moves.map(m => m.word.length));
+  const longest = moves.filter(m => m.word.length === maxLen);
+  const pick2 = longest[Math.floor(Math.random() * longest.length)];
+  
+  // 残りの中から完全ランダムに1つ
+  const rest = moves.filter(m => m !== pick1 && m !== pick2);
+  const pick3 = rest[Math.floor(Math.random() * rest.length)];
+  
+  return [pick1, pick2, pick3];
+}  
+  
   
   
   
