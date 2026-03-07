@@ -772,7 +772,7 @@ if(!isHiraganaOnly(word)){
     to: lineEndIdx,
     color: isSecondPlayer ? "rgba(0, 0, 255, 0.2)" : "rgba(255, 0, 0, 0.2)"
   });
- const cellSize = window.innerWidth <= 600 ? Math.floor((window.innerWidth - 40) / 7) : 50;
+ const cellSize = window.innerWidth <= 600 ? (window.innerWidth - 40) / 7 : 50;
 drawLines("lineCanvas", cellSize, 2);
   
 // ログに表示する名前を決定
@@ -1466,9 +1466,9 @@ function drawLines(canvasId, cellSize, gap) {
   if (!canvas || !toggle) return;
 
   const ctx = canvas.getContext("2d");
-  const totalSize = 7 * cellSize + 6 * gap;
-  canvas.width = totalSize;
-  canvas.height = totalSize;
+  const boardElem = document.getElementById("board");
+canvas.width = boardElem.offsetWidth;
+canvas.height = boardElem.offsetHeight;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (!toggle.checked) return;
@@ -1491,7 +1491,7 @@ function drawLines(canvasId, cellSize, gap) {
   
 function toggleTrajectory() {
   // バーの状態が変わったので、再描画（または消去）を実行する
-  const cellSize = window.innerWidth <= 600 ? Math.floor((window.innerWidth - 40) / 7) : 50;
+ const cellSize = window.innerWidth <= 600 ? (window.innerWidth - 40) / 7 : 50;
 drawLines("lineCanvas", cellSize, 2);
 }  
   
