@@ -1463,15 +1463,17 @@ function resetGame(){
 function drawLines(canvasId, cellSize, gap) {
   const canvas = document.getElementById(canvasId);
   const toggle = document.getElementById("showTrajectory");
-  if (!canvas || !toggle) return;
+  const boardElem = document.getElementById("board");
+  if (!canvas || !toggle || !boardElem) return;
 
   const ctx = canvas.getContext("2d");
-  const boardElem = document.getElementById("board");
-canvas.width = boardElem.offsetWidth;
-canvas.height = boardElem.offsetHeight;
+  canvas.width = boardElem.offsetWidth;
+  canvas.height = boardElem.offsetHeight;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (!toggle.checked) return;
+
+  const actualCellSize = boardElem.offsetWidth / 7;
 
   moveHistory.forEach(move => {
     const fR = Math.floor(move.from / 7);
@@ -1483,8 +1485,8 @@ canvas.height = boardElem.offsetHeight;
     ctx.strokeStyle = move.color;
     ctx.lineWidth = 10;
     ctx.lineCap = "round";
-    ctx.moveTo(fC * (cellSize + gap) + cellSize / 2, fR * (cellSize + gap) + cellSize / 2);
-    ctx.lineTo(tC * (cellSize + gap) + cellSize / 2, tR * (cellSize + gap) + cellSize / 2);
+    ctx.moveTo(fC * actualCellSize + actualCellSize / 2, fR * actualCellSize + actualCellSize / 2);
+    ctx.lineTo(tC * actualCellSize + actualCellSize / 2, tR * actualCellSize + actualCellSize / 2);
     ctx.stroke();
   });
 }
