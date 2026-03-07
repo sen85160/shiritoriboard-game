@@ -122,11 +122,11 @@ button{ margin:5px; padding:6px 12px; }
     align-items: center;
   }
   #board {
-    grid-template-columns: repeat(7, calc((100vw - 20px) / 7));
+    grid-template-columns: repeat(7, calc((100vw - 30px) / 7));
   }
   .cell {
-    width: calc((100vw - 20px) / 7);
-    height: calc((100vw - 20px) / 7);
+    width: calc((100vw - 30px) / 7);
+    height: calc((100vw - 30px) / 7);
     font-size: 14px;
   }
   #logBox {
@@ -135,6 +135,16 @@ button{ margin:5px; padding:6px 12px; }
   #wordInput {
     width: 40vw;
   }
+    #sidePanel {
+  display: flex;
+  flex-direction: column;
+  width: 90vw;
+}
+#statusArea { order: 1; }
+#surrenderButton { order: 2; }
+#showTrajectory { order: 3; }
+#logBox { order: 4; }
+#sidePanel h3 { order: 5; }
 }  
   
   
@@ -258,7 +268,7 @@ button{ margin:5px; padding:6px 12px; }
 </div>
 </div>
 
-<div>
+<div id="sidePanel">
 <h3>対局ログ</h3>
 <div id="logBox"></div>
 
