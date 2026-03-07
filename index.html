@@ -556,6 +556,8 @@ const useTimerRadio = document.querySelector('input[name="useTimer"]:checked');
 function setFirstChar(){
 let firstChar=document.getElementById("firstCharInput").value.trim();
 if(!firstChar){alert("文字を入力してください");return;}
+if(firstChar.length > 1){alert("1文字だけ入力してください");return;}
+if(!/^[ぁ-ん]$/.test(firstChar)){alert("ひらがなを入力してください");return;}
 lastChar=normalizeChar(firstChar[0]);
 board.children[24].textContent=lastChar;
 currentCharDisplay.textContent=lastChar;
