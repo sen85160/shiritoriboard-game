@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<head>
+<head> 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>しりとり盤ゲーム 完全版</title>
@@ -93,7 +93,29 @@ body { font-family:sans-serif; padding:10px; }
 .bigTitle{ font-size:60px; font-weight:bold; margin-bottom:20px; }
 .resultBoard{ display:grid; grid-template-columns:repeat(7,40px); gap:2px; margin:15px auto; }
 .resultCell{ width:40px; height:40px; border:1px solid gray; display:flex; align-items:center; justify-content:center; }
-button{ margin:5px; padding:6px 12px; }
+button {
+  margin: 5px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #4a90d9;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+button:hover {
+  background: #357abd;
+}
+select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 2px solid #4a90d9;
+  color: #4a90d9;
+  font-size: 14px;
+  cursor: pointer;
+  background: white;
+}
+  
 .resultCell.last {
   border: 2px solid blue;  /* 太くした */
 }
@@ -117,6 +139,7 @@ button{ margin:5px; padding:6px 12px; }
 }
   
 @media (max-width: 600px) {
+  
   #container {
     flex-direction: column;
     align-items: center;
@@ -142,15 +165,82 @@ button{ margin:5px; padding:6px 12px; }
     flex-direction: column;
     width: 90vw;
   }
-  #validCountArea { 
-    order: 1;
-    margin-top: 0;
+#validCountArea { 
+  order: 1;
+  margin-top: 0;
+}
+#aiThinking { order: 2; }
+#resetButton { order: 3; }  
+#surrenderButton { order: 4; }
+#trajectoryLabel { order: 5; }
+#chatTabs { order: 6; }
+#logTitle { order: 7; }
+#logBox { order: 8; }
+#chatSection { order: 9; }
+  
+h1 { font-size: 34px; letter-spacing: 2px; }  
+}
+
+
+#chatBox {
+  width: 240px;
+  height: 180px;
+  border: 1px solid black;
+  overflow-y: auto;
+  padding: 5px;
+  background: #f8f8f8;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.chatMsg {
+  max-width: 80%;
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  word-break: break-all;
+}
+.chatMsg.mine {
+  align-self: flex-end;
+  background: #dcf8c6;
+}
+.chatMsg.theirs {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid #ddd;
+}
+#chatTabs button {
+  flex: 1;
+  padding: 5px;
+  border: 1px solid #ccc;
+  background: #eee;
+  cursor: pointer;
+  color: black;
+}
+#chatTabs button.active {
+  background: white;
+  font-weight: bold;
+  border: 2px solid red;
+}
+@media (max-width: 600px) {
+  #chatBox { width: 90vw; }
   }
-  #aiThinking { order: 2; }
-  #surrenderButton { order: 3; }
-  #trajectoryLabel { order: 4; }
-  #logBox { order: 5; }
-  #sidePanel h3 { order: 6; }
+  
+/* ラジオボタンを隠してラベルをボタン化 */
+input[type="radio"] { display: none; }
+input[type="radio"] + label, label:has(input[type="radio"]) {
+  display: inline-block;
+  padding: 8px 16px;
+  margin: 3px;
+  border-radius: 8px;
+  border: 2px solid #4a90d9;
+  color: #4a90d9;
+  cursor: pointer;
+  font-size: 14px;
+}
+input[type="radio"]:checked + label, label:has(input[type="radio"]:checked) {
+  background: #4a90d9;
+  color: white;
 }
   
 </style>
@@ -158,12 +248,14 @@ button{ margin:5px; padding:6px 12px; }
 <body>
 
 <div id="modePage">
-<h2>しりとり盤面ゲーム　</h2>
+<h1 style="font-weight: bold; letter-spacing: 4px; background: linear-gradient(135deg, #4a90d9, #7b4fa3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px;">しりとり盤ゲーム</h1>
+<p style="color: #888; font-size: 13px; margin-top: 0; letter-spacing: 2px;">SHIRITORI BOARD GAME</p>
 
 <p>モード選択:</p>
   <label><input type="radio" name="mode" value="human" id="modeHuman" onchange="toggleTurnSelect()"> 人間同士で対戦</label>
   <label><input type="radio" name="mode" value="ai" id="modeAI" onchange="toggleTurnSelect()"> AIと対戦</label>
 
+  <label><input type="radio" name="mode" value="online" id="modeOnline" onchange="toggleTurnSelect()"> オンライン対戦(NEW)</label>
  
  <div id="humanNames" style="display:none;">
     <p>プレイヤー名入力:</p>
@@ -203,6 +295,31 @@ button{ margin:5px; padding:6px 12px; }
         </select>
     </label>
 </div>   
+  
+  
+ <div id="onlineSettings" style="display:none;">
+  <p>部屋の設定:</p>
+  <label><input type="radio" name="onlineAction" value="create" checked onchange="toggleOnlineSettings()"> 部屋を作る</label>
+  <label><input type="radio" name="onlineAction" value="join" onchange="toggleOnlineSettings()"> 部屋に入る</label>
+
+  <div id="createRoomSettings" style="margin-top:10px;">
+    <p>あなたの名前:</p>
+    <input id="onlinePlayerName" placeholder="名前を入力">
+    <p>手番:</p>
+    <label><input type="radio" name="onlineOrder" value="first" checked> 先攻</label>
+    <label><input type="radio" name="onlineOrder" value="second"> 後攻</label>
+    <p>合言葉:</p>
+    <input id="roomKeyInput" placeholder="合言葉を入力">
+  </div>
+
+  <div id="joinRoomSettings" style="display:none; margin-top:10px;">
+    <p>あなたの名前:</p>
+    <input id="onlinePlayerNameJoin" placeholder="名前を入力">
+    <p>合言葉:</p>
+    <input id="roomKeyJoinInput" placeholder="合言葉を入力">
+  </div>
+</div> 
+  
   
 <br><br> 
  <button type="button" onclick="showRules()" style="margin-top: 20px; padding: 5px 15px; cursor: pointer;">ルールを読む</button> 
@@ -259,7 +376,6 @@ button{ margin:5px; padding:6px 12px; }
 </select>
 
   <button onclick="placeWord()">置く</button>
-  <button id="resetButton" onclick="resetGame()">リセット</button>
   
 <div id="dictAlert" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#f0f0f0; border:1px solid #aaa; border-radius:4px; padding:15px 20px; z-index:9999; text-align:center; box-shadow:2px 2px 6px rgba(0,0,0,0.3); min-width:300px;">
   <p id="dictAlertMsg" style="margin:0 0 10px 0;"></p>
@@ -275,8 +391,20 @@ button{ margin:5px; padding:6px 12px; }
 </div>
 
 <div id="sidePanel">
-<h3>対局ログ</h3>
+<div id="chatTabs" style="display:none;">
+  <button id="tabLog" class="active" onclick="switchTab('log')">対局ログ</button>
+  <button id="tabChat" onclick="switchTab('chat')">チャット</button>
+</div>
+<h3 id="logTitle">対局ログ</h3>
 <div id="logBox"></div>
+<div id="chatSection" style="display:none; margin-top:3px;">
+<h3 style="margin-top:5px; margin-bottom:5px;">チャット</h3>
+  <div id="chatBox"></div>
+  <div style="display:flex; gap:5px; margin-top:5px;">
+    <input id="chatInput" maxlength="10" placeholder="10文字以内" style="flex:1; padding:4px;">
+    <button onclick="sendChat()">送信</button>
+  </div>
+</div>
 
 <div id="statusArea">
   <div id="aiThinking">AI考え中…</div>
@@ -285,7 +413,7 @@ button{ margin:5px; padding:6px 12px; }
   </div>
 </div>
  
-
+<button id="resetButton" onclick="resetGame()">リセット</button>
 <button id="surrenderButton" data-player="A" onclick="surrender(this)">降参する</button>
   
   <label style="font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none;">
@@ -297,9 +425,56 @@ button{ margin:5px; padding:6px 12px; }
 </div>
 </div>
 
+<div id="waitingOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:10000; justify-content:center; align-items:center;">
+  <div style="background:white; border-radius:10px; padding:30px; text-align:center; min-width:280px;">
+    <p id="waitingMessage" style="font-size:18px; margin-bottom:20px;"></p>
+    <button id="waitingOkBtn" style="display:none;" onclick="handleWaitingOk()">OK</button>
+  </div>
+</div>
+  
 <div id="resultOverlay">
 <div class="resultBox" id="resultBox"></div>
 </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, update, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAp14vmxoLdh4WwD9kKMnmTaLZBAMNC2L8",
+  authDomain: "shiritori-game-4898f.firebaseapp.com",
+  databaseURL: "https://shiritori-game-4898f-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "shiritori-game-4898f",
+  storageBucket: "shiritori-game-4898f.firebasestorage.app",
+  messagingSenderId: "962873120214",
+  appId: "1:962873120214:web:bd54dda254c926cdb78077"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+window._db = db;
+window._ref = ref;
+window._set = set;
+window._get = get;
+window._onValue = onValue;
+window._update = update;
+window._remove = remove;
+window._onDisconnect = onDisconnect;  
+</script>  
+  
+  
+  
+  
+  
+  
 
 <script>
 const board=document.getElementById("board");
@@ -327,38 +502,29 @@ right:"→", left:"←", up:"↑", down:"↓",
 upright:"↗", upleft:"↖", downright:"↘", downleft:"↙"
 };
 
-function toggleTurnSelect(){
-const selected=document.querySelector('input[name="mode"]:checked').value;
-document.getElementById("turnSelect").style.display=(selected==="ai")?"block":"none";
-}
-  
-function toggleTurnSelect(){
-  const selected = document.querySelector('input[name="mode"]:checked').value;
-  document.getElementById("aiSettings").style.display = (selected === "ai") ? "block" : "none";
-}
-  
-  
-function toggleTurnSelect(){
-  const selected = document.querySelector('input[name="mode"]:checked').value;
-  if(selected === "ai"){
-    document.getElementById("turnSelect").style.display = "block"; 
-    document.getElementById("humanNames").style.display = "none";
-  } else {
-    document.getElementById("turnSelect").style.display = "none";
-    document.getElementById("humanNames").style.display = "block"; 
-   
-}
-}
+
 
 function toggleTurnSelect(){
   const selected = document.querySelector('input[name="mode"]:checked').value;
-  
   const isAI = (selected === "ai");
+  const isOnline = (selected === "online");
 
   document.getElementById("turnSelect").style.display = isAI ? "block" : "none";
   document.getElementById("aiSettings").style.display = isAI ? "block" : "none";
-  document.getElementById("humanNames").style.display = isAI ? "none" : "block";
-}  
+  document.getElementById("humanNames").style.display = (!isAI && !isOnline) ? "block" : "none";
+  document.getElementById("onlineSettings").style.display = isOnline ? "block" : "none";
+}
+
+function toggleOnlineSettings(){
+  const action = document.querySelector('input[name="onlineAction"]:checked').value;
+  document.getElementById("createRoomSettings").style.display = (action === "create") ? "block" : "none";
+  document.getElementById("joinRoomSettings").style.display = (action === "join") ? "block" : "none";
+}
+  
+  
+  
+  
+  
   
 // 設定画面の出し分け
 function toggleTimerSettings() {
@@ -475,6 +641,17 @@ let humanFirst = true; // 先攻フラグ
   
 function startGame(){
 mode=document.querySelector('input[name="mode"]:checked').value;
+  
+ if(mode === "online"){
+    const action = document.querySelector('input[name="onlineAction"]:checked').value;
+    if(action === "create"){
+      createRoom();
+    } else {
+      joinRoom();
+    }
+    return;
+  }  
+  
 aiStrength=parseInt(document.getElementById("aiStrength").value);
 if(mode==="ai"){
 const order=document.querySelector('input[name="order"]:checked').value;
@@ -487,6 +664,9 @@ else { // 人間vs人間
   }
 document.getElementById("modePage").style.display="none";
 document.getElementById("gamePage").style.display="block";
+document.getElementById("logBox").style.height = "400px";
+document.getElementById("chatSection").style.display = "none";
+document.getElementById("chatTabs").style.display = "none";
 createBoard();
 // 入力欄を復活させ、中身を空にする
 const firstCharInput = document.getElementById("firstCharInput");
@@ -554,24 +734,32 @@ const useTimerRadio = document.querySelector('input[name="useTimer"]:checked');
   
 
 function setFirstChar(){
-let firstChar=document.getElementById("firstCharInput").value.trim();
-if(!firstChar){alert("文字を入力してください");return;}
-if(firstChar.length > 1){alert("1文字だけ入力してください");return;}
-if(!/^[ぁ-ん]$/.test(firstChar)){alert("ひらがなを入力してください");return;}
-lastChar=normalizeChar(firstChar[0]);
-board.children[24].textContent=lastChar;
-currentCharDisplay.textContent=lastChar;
-updateStartHighlight();
-document.getElementById("firstCharInput").disabled=true;
-if(mode === "human" && isTimerActive) {
-    startTimer();
+  let firstChar = document.getElementById("firstCharInput").value.trim();
+  if(!firstChar){ alert("文字を入力してください"); return; }
+  if(firstChar.length > 1){ alert("1文字だけ入力してください"); return; }
+  if(!/^[ぁ-ん]$/.test(firstChar)){ alert("ひらがなを入力してください"); return; }
+
+  lastChar = normalizeChar(firstChar[0]);
+  board.children[24].textContent = lastChar;
+  currentCharDisplay.textContent = lastChar;
+  updateStartHighlight();
+  document.getElementById("firstCharInput").disabled = true;
+
+  if(mode === "online"){
+    const db = window._db;
+    const ref = window._ref;
+    const update = window._update;
+    update(ref(db, `rooms/${roomKey}`), {
+      firstChar: lastChar,
+      lastChar: lastChar,
+      currentTurn: "first"
+    });
+    return;
   }
-if(mode==="ai" && !humanIsFirst){
-setTimeout(aiTurn,300);
+
+  if(mode === "human" && isTimerActive){ startTimer(); }
+  if(mode === "ai" && !humanIsFirst){ setTimeout(aiTurn, 300); }
 }
-  
-}
-  
  
 
 function switchPlayer() {
@@ -662,6 +850,8 @@ function countHumanValidMoves() {
 function placeWord(fromAI=false){
   if(gameOver) return;
 
+  if(mode === "online" && !isMyTurn){ alert("相手のターンです"); return; }
+
   const word=document.getElementById("wordInput").value.trim();
   const dir=document.getElementById("direction").value;
 
@@ -714,10 +904,16 @@ if(!isHiraganaOnly(word)){
     return;
   }
   
- if(!fromAI && getLastChar(word) === "ん"){
+
+  if(!fromAI && getLastChar(word) === "ん"){
+  if(mode === "online"){
+    window._update(window._ref(window._db, `rooms/${roomKey}`), {
+      result: { winner: myRole === "first" ? "second" : "first", reason: `${myName}が「ん」で終わる単語を置いたため` }
+    });
+  }
   showResult("lose", "「ん」で終わる単語を置いたため");
   return;
-} 
+}
   
 
   if(!fromAI){
@@ -860,6 +1056,26 @@ document.getElementById("humanValidCount").textContent = countHumanValidMoves();
       }
     }
   }
+
+ if(mode === "online"){
+  const validCount = countHumanValidMoves();
+  if(validCount === 0){
+    const newBoard = Array.from(board.children, c => c.textContent);
+    const newLog = [];
+    logBox.querySelectorAll(".logEntry").forEach(e => newLog.push(e.innerHTML));
+    window._update(window._ref(window._db, `rooms/${roomKey}`), {
+      board: newBoard,
+      lastIndex: lastIndex,
+      lastChar: lastChar,
+      usedWords: Array.from(usedWords),
+      log: newLog,
+      moveHistory: moveHistory,
+      result: { winner: myRole, reason: "相手が置ける単語がなくなったため" }
+    });
+    showResult("win", "相手が置ける単語がなくなったため");
+    return;
+  }
+}
   
   if(mode === "human"){
     const validCount = countHumanValidMoves();
@@ -871,7 +1087,31 @@ document.getElementById("humanValidCount").textContent = countHumanValidMoves();
     }
   }
 
-  // ターン切り替えの後に実行
+ if(mode === "online"){
+    const db = window._db;
+    const ref = window._ref;
+    const update = window._update;
+
+    const newBoard = Array.from(board.children, c => c.textContent);
+    const newLog = [];
+    logBox.querySelectorAll(".logEntry").forEach(e => newLog.push(e.innerHTML));
+
+    update(ref(db, `rooms/${roomKey}`), {
+      board: newBoard,
+      lastIndex: lastIndex,
+      lastChar: lastChar,
+      usedWords: Array.from(usedWords),
+      currentTurn: myRole === "first" ? "second" : "first",
+      log: newLog,
+      moveHistory: moveHistory
+    });
+    document.getElementById("wordInput").value = "";
+    return;
+  }
+
+ 
+  
+  
   switchPlayer();
   document.getElementById("wordInput").value = "";
 
@@ -1260,9 +1500,10 @@ function showResult(result, reason){
   const resultFooter = document.createElement("div");
   resultFooter.className = "resultFooter";
   // フッター（ボタンエリア）も色を合わせる
-  if(mode === "ai" && result === "lose") {
+ if(mode === "ai" && result === "lose") {
     resultFooter.style.backgroundColor = "#333";
   }
+
 
   const title = document.createElement("div");
   title.className = "bigTitle";
@@ -1311,11 +1552,39 @@ function showResult(result, reason){
   // --- 再戦ボタン ---
   const retry = document.createElement("button");
   retry.textContent = "再戦";
- retry.onclick = () => {
+retry.onclick = () => {
+  if(mode === "online"){
+    if(roomUnsubscribe){
+      roomUnsubscribe();
+      roomUnsubscribe = null;
+    }
+    gameOver = false;
+    disconnectAlerted = false;
+    const overlay = document.getElementById("resultOverlay");
+    overlay.classList.remove("show","lose","win");
+    window._update(window._ref(window._db, `rooms/${roomKey}`), {
+      status: "rematch_requested",
+      result: null,
+      board: Array(49).fill(""),
+      lastIndex: 24,
+      lastChar: "",
+      firstChar: "",
+      usedWords: [],
+      currentTurn: "first",
+      log: [],
+      moveHistory: []
+    });
+    createBoard();
+document.getElementById("firstCharInput").disabled = myRole !== "second";
+document.getElementById("firstCharInput").value = "";
+document.getElementById("wordInput").value = "";
+currentPlayerDisplay.textContent = myRole === "second" ? myName : opponentName;
+    showWaiting("相手の応答を待っています...");
+    listenToRoom();
+    return;
+  }
   overlay.classList.remove("show","lose","win");
   createBoard();
-  document.getElementById("firstCharInput").disabled = false;
-  document.getElementById("firstCharInput").value = "";
   if(mode === "ai"){
     currentPlayerDisplay.textContent = humanIsFirst ? "あなた" : playerBName;
   } else {
@@ -1367,18 +1636,27 @@ function showResult(result, reason){
   // --- タイトルへ戻るボタン ---
   const back = document.createElement("button");
   back.textContent = "タイトルへ戻る";
-  back.onclick = () => {
+ back.onclick = () => {
     overlay.classList.remove("show","lose","win");
+    hideWaiting();
     document.getElementById("gamePage").style.display = "none";
     document.getElementById("modePage").style.display = "block";
   };
   resultFooter.appendChild(back);
 
-  // 4. boxに合体させる
+
   box.appendChild(resultContent);
   box.appendChild(resultFooter);
 
-  // 5. 軌跡の描画
+   if(result === "lose") {
+    resultFooter.querySelectorAll("button").forEach(btn => {
+      if(btn.textContent === "結果をシェア") return;
+      btn.style.setProperty("background", "white", "important");
+      btn.style.setProperty("color", "black", "important");
+    });
+   }  
+  
+
   const resColor = (result === "lose") ? "rgba(255, 255, 255, 0.30)" : "rgba(0, 0, 255, 0.15)";
   setTimeout(() => {
     const ctx = resCanvas.getContext("2d");
@@ -1425,6 +1703,24 @@ function proposalWord(){
   
 function surrender(button) {
   if (gameOver) return;
+  if(mode === "online"){
+  const possibleMoves = getValidMoves();
+  let hints = "";
+  if(possibleMoves.length > 0){
+    const sampleMoves = getHintMoves(possibleMoves).map(m =>
+      `<span style="background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1);">${m.word} (${dirSymbol[m.dir]})</span>`
+    );
+    hints = `<br><br><div style="font-size:0.85em; padding:10px; border-radius:6px; margin-top:10px; color: #555; background: #f9f9f9; border: 1px solid #ccc;">
+      <div style="margin-bottom:5px; font-weight:bold;">💡 置けた単語の例:</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">${sampleMoves.join("")}</div>
+    </div>`;
+  }
+  window._update(window._ref(window._db, `rooms/${roomKey}`), {
+    result: { winner: myRole === "first" ? "second" : "first", reason: `${myName}が降参したため` }
+  });
+  showResult("lose", `${myName}が降参したため` + hints);
+  return;
+}
   if (timerInterval) clearInterval(timerInterval);
 
   const loserName = currentPlayerDisplay.textContent;
@@ -1455,11 +1751,11 @@ function surrender(button) {
     showResult("win", `${loserName}が降参したため` + hints);
   }
 
-  // 4. 結果表示（reasonMessageにすべての情報が入った状態で送る）
-  showResult(resultType, reasonMessage);
+
 }
   
 function resetGame(){
+  if(mode === "online"){ alert("オンライン対戦中はリセットできません"); return; }
   if(confirm("本当にリセットしますか？")){
     createBoard();
     document.getElementById("firstCharInput").disabled=false;
@@ -1535,6 +1831,335 @@ function getHintMoves(moves) {
   
   return [pick1, pick2, pick3];
 }  
+  
+function switchTab(tab) {
+  const logBox = document.getElementById("logBox");
+  const logTitle = document.getElementById("logTitle");
+  const chatSection = document.getElementById("chatSection");
+  const tabLog = document.getElementById("tabLog");
+  const tabChat = document.getElementById("tabChat");
+
+  if(tab === "log"){
+    logBox.style.display = "block";
+    logTitle.style.display = "block";
+    chatSection.style.display = "none";
+    tabLog.classList.add("active");
+    tabChat.classList.remove("active");
+  } else {
+    logBox.style.display = "none";
+    logTitle.style.display = "none";
+    chatSection.style.display = "block";
+    tabLog.classList.remove("active");
+    tabChat.classList.add("active");
+  }
+}
+
+function sendChat(){
+  const input = document.getElementById("chatInput");
+  const text = input.value.trim();
+  if(!text || mode !== "online") return;
+  input.value = "";
+  window._update(window._ref(window._db, `rooms/${roomKey}`), {
+    chat: { text: text, sender: myRole, timestamp: Date.now() }
+  });
+}
+
+function receiveChat(data){
+  if(!data.chat) return;
+  const chatBox = document.getElementById("chatBox");
+  const isMine = data.chat.sender === myRole;
+  const div = document.createElement("div");
+  div.className = "chatMsg " + (isMine ? "mine" : "theirs");
+  div.textContent = isMine ? data.chat.text : opponentName + ": " + data.chat.text;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+} 
+  
+  
+let roomKey = "";
+let myRole = ""; // "first" or "second"
+let myName = "";
+let opponentName = "";
+let isMyTurn = false;
+let disconnectAlerted = false;  
+let roomUnsubscribe = null;  
+
+function createRoom(){
+  roomKey = document.getElementById("roomKeyInput").value.trim();
+  myName = document.getElementById("onlinePlayerName").value.trim() || "プレイヤー1";
+  const order = document.querySelector('input[name="onlineOrder"]:checked').value;
+  myRole = order;
+
+  if(!roomKey){ alert("合言葉を入力してください"); return; }
+
+  const db = window._db;
+  const ref = window._ref;
+  const set = window._set;
+  const onValue = window._onValue;
+
+  const roomRef = ref(db, `rooms/${roomKey}`);
+  set(roomRef, {
+    status: "waiting",
+    first: myRole === "first" ? { name: myName } : null,
+    second: myRole === "second" ? { name: myName } : null,
+    firstChar: "",
+    board: Array(49).fill(""),
+    lastIndex: 24,
+    lastChar: "",
+    usedWords: [],
+    currentTurn: "first",
+    log: []
+  });
+
+  alert(`部屋を作りました。合言葉「${roomKey}」を相手に伝えてください。`);
+  waitForOpponent();
+}
+
+function joinRoom(){
+  roomKey = document.getElementById("roomKeyJoinInput").value.trim();
+  myName = document.getElementById("onlinePlayerNameJoin").value.trim() || "プレイヤー2";
+
+  if(!roomKey){ alert("合言葉を入力してください"); return; }
+
+  const db = window._db;
+  const ref = window._ref;
+  const get = window._get;
+  const update = window._update;
+
+  const roomRef = ref(db, `rooms/${roomKey}`);
+  get(roomRef).then(snapshot => {
+    if(!snapshot.exists()){ alert("部屋が見つかりません"); return; }
+    const data = snapshot.val();
+    if(data.status !== "waiting"){ alert("この部屋はすでに対戦中です"); return; }
+
+    // 空いている手番に入る
+    if(!data.first){
+      myRole = "first";
+      update(roomRef, { first: { name: myName }, status: "ready" });
+    } else if(!data.second){
+      myRole = "second";
+      update(roomRef, { second: { name: myName }, status: "ready" });
+    } else {
+      alert("部屋が満員です");
+      return;
+    }
+    startOnlineGame();
+  });
+}
+
+function waitForOpponent(){
+  const db = window._db;
+  const ref = window._ref;
+  const onValue = window._onValue;
+
+  showWaiting("相手の入室を待っています...");
+
+  const roomRef = ref(db, `rooms/${roomKey}/status`);
+  const unsubscribe = onValue(roomRef, (snapshot) => {
+    if(snapshot.val() === "ready"){
+      unsubscribe();
+      hideWaiting();
+      startOnlineGame();
+    }
+  });
+}
+
+function startOnlineGame(){
+  const db = window._db;
+  const ref = window._ref;
+  const onValue = window._onValue;
+
+  // 部屋のデータを取得して名前を設定
+  const roomRef = ref(db, `rooms/${roomKey}`);
+  window._onValue(roomRef, (snapshot) => {}, { onlyOnce: true });
+
+  window._get(roomRef).then(snapshot => {
+    const data = snapshot.val();
+    playerAName = data.first?.name || "先攻";
+    playerBName = data.second?.name || "後攻";
+    opponentName = myRole === "first" ? playerBName : playerAName;
+
+    isMyTurn = (myRole === "first"); // 先攻が最初のターン、ただし開始文字は後攻
+
+    document.getElementById("modePage").style.display = "none";
+    document.getElementById("gamePage").style.display = "block";
+    createBoard();
+
+    document.getElementById("firstCharInput").disabled = false;
+    document.getElementById("firstCharInput").value = "";
+    document.getElementById("wordInput").value = "";
+
+if(myRole === "second"){
+      currentPlayerDisplay.textContent = myName;
+      document.getElementById("firstCharInput").disabled = false;
+      setTimeout(() => alert("【接続しました】\nあなたは後攻です。最初の文字を決めてください。"), 300);
+    } else {
+      currentPlayerDisplay.textContent = opponentName;
+      document.getElementById("firstCharInput").disabled = true;
+      setTimeout(() => alert("【接続しました】\nあなたは先攻です。後攻が最初の文字を置くまで待機してください。\n最初の文字が置かれたら、単語を置いてください。"), 300);
+    }
+
+   document.getElementById("logBox").style.height = "160px";
+document.getElementById("chatSection").style.display = "block";
+if(window.innerWidth <= 600){
+  document.getElementById("chatTabs").style.display = "flex";
+  switchTab("log");
+} else {
+  document.getElementById("chatTabs").style.display = "none";
+}
+    listenToRoom();
+  });
+}
+
+function showWaiting(message, showOk = false) {
+  const overlay = document.getElementById("waitingOverlay");
+  document.getElementById("waitingMessage").textContent = message;
+  document.getElementById("waitingOkBtn").style.display = showOk ? "inline-block" : "none";
+  overlay.style.display = "flex";
+}
+
+function hideWaiting() {
+  document.getElementById("waitingOverlay").style.display = "none";
+}
+
+function handleWaitingOk() {
+  hideWaiting();
+  if(window._pendingRematch) {
+    window._pendingRematch();
+    window._pendingRematch = null;
+  }
+}
+
+  
+
+function listenToRoom(){
+  const db = window._db;
+  const ref = window._ref;
+
+  const discRef = window._ref(db, `rooms/${roomKey}/disconnected/${myRole}`);
+  window._onDisconnect(discRef).set(true);
+
+  const roomRef = ref(db, `rooms/${roomKey}`);
+  if(roomUnsubscribe) {
+    roomUnsubscribe();
+    roomUnsubscribe = null;
+  }
+  roomUnsubscribe = window._onValue(roomRef, (snapshot) => {
+    const data = snapshot.val();
+    if(!data) return;
+
+    if(data.disconnected){
+      const opponentRole = myRole === "first" ? "second" : "first";
+      if(data.disconnected[opponentRole] && !gameOver && !disconnectAlerted){
+        disconnectAlerted = true;
+        alert("相手が退出しました。タイトルに戻ります。");
+         if(roomUnsubscribe){
+    roomUnsubscribe();
+    roomUnsubscribe = null;
+  }
+  document.getElementById("resultOverlay").classList.remove("show","lose","win");
+  hideWaiting();
+  document.getElementById("gamePage").style.display = "none";
+  document.getElementById("modePage").style.display = "block";
+      }
+    }
+
+    if(data.board){
+      for(let i = 0; i < 49; i++){
+        board.children[i].textContent = data.board[i] || "";
+      }
+    }
+
+    if(data.lastIndex !== undefined) lastIndex = data.lastIndex;
+    if(data.lastChar !== undefined){
+      lastChar = data.lastChar;
+      currentCharDisplay.textContent = data.lastChar;
+    }
+    if(data.usedWords) usedWords = new Set(data.usedWords);
+
+    if(data.log){
+      logBox.innerHTML = "";
+      data.log.forEach(entry => {
+        const div = document.createElement("div");
+        div.className = "logEntry";
+        div.innerHTML = entry;
+        logBox.appendChild(div);
+      });
+    }
+    
+if(data.status === "ready" && !gameOver){
+      hideWaiting();
+    }
+    
+    if(data.firstChar){
+      board.children[24].textContent = data.firstChar;
+    }
+
+    const myRoleTurn = (data.currentTurn === myRole);
+    isMyTurn = myRoleTurn;
+    currentPlayerDisplay.textContent = myRoleTurn ? myName : opponentName;
+
+if(data.status === "rematch_requested" && gameOver){
+  if(window._pendingRematch){
+    window._pendingRematch();
+    return;
+  }
+      showWaiting("相手が再戦を希望しています", true);
+     window._pendingRematch = () => {
+  gameOver = false;
+  disconnectAlerted = false;
+  window._pendingRematch = null;
+  const overlay = document.getElementById("resultOverlay");
+  overlay.classList.remove("show","lose","win");
+  createBoard();
+  document.getElementById("firstCharInput").disabled = myRole !== "second";
+  document.getElementById("firstCharInput").value = "";
+  document.getElementById("wordInput").value = "";
+  currentPlayerDisplay.textContent = myRole === "second" ? myName : opponentName;
+  window._update(window._ref(window._db, `rooms/${roomKey}`), {
+    status: "ready"
+  });
+  listenToRoom();
+};
+    }
+  
+    if(data.result && !gameOver){
+      const iWin = data.result.winner === myRole;
+      if(iWin){
+        currentPlayerDisplay.textContent = myName;
+      } else {
+        currentPlayerDisplay.textContent = opponentName;
+      }
+      showResult(iWin ? "win" : "lose", data.result.reason);
+    }
+
+    
+
+    if(data.moveHistory){
+      moveHistory = data.moveHistory;
+      const cellSize = window.innerWidth <= 600 ? (window.innerWidth - 90) / 7 : 50;
+      drawLines("lineCanvas", cellSize, 2);
+    }
+
+if(data.chat){
+  const chatBox = document.getElementById("chatBox");
+  const lastMsg = chatBox.lastChild;
+  const lastText = data.chat.sender === myRole ? data.chat.text : opponentName + ": " + data.chat.text;
+  if(!lastMsg || lastMsg.textContent !== lastText){
+    receiveChat(data);
+  }
+}
+
+    
+    updateStartHighlight();
+    document.getElementById("humanValidCount").textContent = countHumanValidMoves();
+  });
+}
+
+  
+  
+  
+  
   
   
   
@@ -2761,9 +3386,6 @@ const dictionaryHard ={
     "あなべ",
     "あなぼこ",
     "あなむねーしす",
-    "あなりすと",
-    "あなる",
-    "あなるせっくす",
     "あなれんま",
     "あなろぐ",
     "あなろぐてれび",
@@ -3755,6 +4377,8 @@ const dictionaryHard ={
     "いざかや",
     "いざこざ",
     "いざない",
+    "いざなぎ",
+    "いざなみ",
     "いざま",
     "いざよい",
     "いざよいづき",
@@ -4079,7 +4703,6 @@ const dictionaryHard ={
     "いちめい",
     "いちめし",
     "いちもく",
-    "いちもつ",
     "いちもの",
     "いちや",
     "いちやづけ",
@@ -4695,8 +5318,6 @@ const dictionaryHard ={
     "いんぐりっしゅ",
     "いんぐーしご",
     "いんけい",
-    "いんけいきとう",
-    "いんけいほね",
     "いんげ",
     "いんげんまめ",
     "いんこ",
@@ -5751,6 +6372,7 @@ const dictionaryHard ={
     "うんぺいとう",
     "うんむ",
     "うんめい",
+    "うんま",
     "うんも",
     "うんゆ",
     "うんゆぎょう",
@@ -7272,11 +7894,7 @@ const dictionaryHard ={
     "おながどり",
     "おながれ",
     "おなご",
-    "おなにすと",
-    "おなにー",
     "おなべ",
-    "おなぺっと",
-    "おなほーる",
     "おなもみ",
     "おなら",
     "おに",
@@ -11760,7 +12378,6 @@ const dictionaryHard ={
     "きんたい",
     "きんたいし",
     "きんたいしゅつ",
-    "きんたま",
     "きんだ",
     "きんだい",
     "きんだいえいご",
@@ -12450,7 +13067,6 @@ const dictionaryHard ={
     "くりっぷ",
     "くりっぷぼーど",
     "くりつ",
-    "くりとりす",
     "くりにっく",
     "くりねずみ",
     "くりのべ",
@@ -12712,8 +13328,6 @@ const dictionaryHard ={
     "くんとく",
     "くんどう",
     "くんどく",
-    "くんに",
-    "くんにりんぐす",
     "くんぷう",
     "くんみち",
     "くんよみ",
@@ -14381,6 +14995,7 @@ const dictionaryHard ={
     "こじんるいがく",
     "こすい",
     "こすう",
+    "こすも",
     "こすけ",
     "こすずしろ",
     "こすちゅーむ",
@@ -18099,7 +18714,7 @@ const dictionaryHard ={
     "しょうが",
     "しょうがい",
     "しょうがいざい",
-    "しょうがいしゃ",
+    "しょうがやき",
     "しょうがいそう",
     "しょうがいぶつ",
     "しょうがいもの",
@@ -20394,7 +21009,6 @@ const dictionaryHard ={
     "せいどうき",
     "せいどうとう",
     "せいどく",
-    "せいどれい",
     "せいなんせい",
     "せいにく",
     "せいにくしょう",
@@ -20699,8 +21313,6 @@ const dictionaryHard ={
     "せっきょく",
     "せっきょくせい",
     "せっく",
-    "せっくす",
-    "せっくすれす",
     "せっくつ",
     "せっけ",
     "せっけい",
@@ -24223,7 +24835,6 @@ const dictionaryHard ={
     "ちんちょう",
     "ちんちょうげ",
     "ちんちら",
-    "ちんちんかも",
     "ちんつう",
     "ちんつうざい",
     "ちんてい",
@@ -24429,6 +25040,7 @@ const dictionaryHard ={
     "つかれ",
     "つかんむり",
     "つが",
+    "つがる",
     "つがい",
     "つがるぬり",
     "つき",
@@ -26156,6 +26768,7 @@ const dictionaryHard ={
     "ところそう",
     "ところち",
     "ところどころ",
+    "とさ",
     "とさか",
     "とさつ",
     "とさつば",
@@ -27161,7 +27774,6 @@ const dictionaryHard ={
     "なまびょうほう",
     "なまびーる",
     "なまふ",
-    "なまふぇら",
     "なまぶ",
     "なまへい",
     "なまほうそう",
@@ -31587,8 +32199,6 @@ const dictionaryHard ={
     "ふぇみきし",
     "ふぇみにすと",
     "ふぇみにずむ",
-    "ふぇら",
-    "ふぇらちお",
     "ふぇりー",
     "ふぇりーぼーと",
     "ふぇると",
@@ -33040,7 +33650,6 @@ const dictionaryHard ={
     "ほうきょう",
     "ほうぎょ",
     "ほうぐ",
-    "ほうけい",
     "ほうけんしゅぎ",
     "ほうけんじだい",
     "ほうけんせい",
@@ -35929,6 +36538,8 @@ const dictionaryHard ={
     "むれちどり",
     "むろ",
     "むーす",
+    "むーたいりく",
+    "むがるていこく",
     "むーど",
     "むーびー",
     "むーるかい",
@@ -36711,7 +37322,6 @@ const dictionaryHard ={
     "ものさし",
     "ものしり",
     "ものずき",
-    "ものせっくす",
     "ものだね",
     "ものづくり",
     "ものとり",
@@ -37751,7 +38361,6 @@ const dictionaryHard ={
     "ゆどおし",
     "ゆどの",
     "ゆに",
-    "ゆにせっくす",
     "ゆにっと",
     "ゆにばーしてぃ",
     "ゆにばーす",
@@ -39499,6 +40108,7 @@ const dictionaryHard ={
     "りんれつ",
     "りんんぼう",
     "りーがる",
+    "りーまんよそう",
     "りーく",
     "りーぐ",
     "りーす",
@@ -40318,6 +40928,7 @@ const dictionaryHard ={
     "ろりーた",
     "ろれつ",
     "ろんい",
+    "ろんご",
     "ろんかく",
     "ろんがい",
     "ろんきょ",
@@ -40825,7 +41436,6 @@ const dictionaryHard ={
     "がいしょ",
     "がいしょう",
     "がいしょく",
-    "がいじ",
     "がいじつりずむ",
     "がいじどう",
     "がいじゅ",
@@ -42994,7 +43604,6 @@ const dictionaryHard ={
     "じあい",
     "じあすたーぜ",
     "じあまり",
-    "じい",
     "じいき",
     "じいく",
     "じいこうい",
