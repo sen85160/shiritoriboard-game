@@ -1703,6 +1703,7 @@ function proposalWord(){
   
 function surrender(button) {
   if (gameOver) return;
+  if(!confirm("本当に降参しますか？")) return;
   if(mode === "online"){
   const possibleMoves = getValidMoves();
   let hints = "";
@@ -1787,8 +1788,10 @@ function drawLines(canvasId, cellSize, gap) {
     ctx.strokeStyle = move.color;
     ctx.lineWidth = 10; 
     ctx.lineCap = "round";
-    ctx.moveTo(fC * (cellSize + gap) + cellSize / 2, fR * (cellSize + gap) + cellSize / 2);
-    ctx.lineTo(tC * (cellSize + gap) + cellSize / 2, tR * (cellSize + gap) + cellSize / 2);
+    const boardElem = document.getElementById("board");
+const actualCellSize = boardElem.clientWidth / 7;
+ctx.moveTo(fC * actualCellSize + actualCellSize / 2, fR * actualCellSize + actualCellSize / 2);
+ctx.lineTo(tC * actualCellSize + actualCellSize / 2, tR * actualCellSize + actualCellSize / 2);
     ctx.stroke();
   });
 }
@@ -2135,11 +2138,11 @@ if(data.status === "rematch_requested" && gameOver){
 
     
 
-    if(data.moveHistory){
-      moveHistory = data.moveHistory;
-      const cellSize = window.innerWidth <= 600 ? (window.innerWidth - 90) / 7 : 50;
-      drawLines("lineCanvas", cellSize, 2);
-    }
+   if(data.moveHistory){
+  moveHistory = data.moveHistory;
+  const cellSize = window.innerWidth <= 600 ? (window.innerWidth - 90) / 7 : 50;
+  drawLines("lineCanvas", cellSize, 2);
+}
 
 if(data.chat){
   const chatBox = document.getElementById("chatBox");
@@ -43394,6 +43397,7 @@ const dictionaryHard ={
     "ざいしつ",
     "ざいしょ",
     "ざいしょう",
+    "ざいす",
     "ざいじゅう",
     "ざいじょう",
     "ざいせ",
