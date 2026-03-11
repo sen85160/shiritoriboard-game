@@ -1140,7 +1140,7 @@ function getValidMoves(){
 
     let baseRow = Math.floor(i / 7);
     let baseCol = i % 7;
-    let dictionary = (mode === "human") ? dictionaryHard : getCurrentDictionary();
+    let dictionary = (mode === "human" || mode === "online") ? dictionaryHard : getCurrentDictionary();
     let wordList = dictionary[lastChar] || [];
 
     for(let w of wordList){
