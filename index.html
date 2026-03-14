@@ -256,6 +256,7 @@ input[type="radio"]:checked + label, label:has(input[type="radio"]:checked) {
   <label><input type="radio" name="mode" value="ai" id="modeAI" onchange="toggleTurnSelect()"> AIと対戦</label>
 
   <label><input type="radio" name="mode" value="online" id="modeOnline" onchange="toggleTurnSelect()"> オンライン対戦(NEW)</label>
+  
  
  <div id="humanNames" style="display:none;">
     <p>プレイヤー名入力:</p>
@@ -276,11 +277,11 @@ input[type="radio"]:checked + label, label:has(input[type="radio"]:checked) {
     </div>
 
     <p>先攻を選択:</p>
-    <label><input type="radio" name="humanOrder" value="A" checked> 左の方が先攻</label>
+    <label><input type="radio" name="humanOrder" value="A" > 左の方が先攻</label>
     <label><input type="radio" name="humanOrder" value="B"> 右の方が先攻</label>
 </div> <div id="turnSelect" style="display:none;">
     <p>手番選択:</p>
-    <label><input type="radio" name="order" value="first" checked> 人間が先手</label>
+    <label><input type="radio" name="order" value="first" > 人間が先手</label>
     <label><input type="radio" name="order" value="second"> 人間が後手</label>
 </div>
 
@@ -297,28 +298,40 @@ input[type="radio"]:checked + label, label:has(input[type="radio"]:checked) {
 </div>   
   
   
- <div id="onlineSettings" style="display:none;">
-  <p>部屋の設定:</p>
-  <label><input type="radio" name="onlineAction" value="create" checked onchange="toggleOnlineSettings()"> 部屋を作る</label>
-  <label><input type="radio" name="onlineAction" value="join" onchange="toggleOnlineSettings()"> 部屋に入る</label>
+<div id="onlineSettings" style="display:none;">
+  <p>オンライン対戦の種類:</p>
+  <label><input type="radio" name="onlineType" value="friend"  onchange="toggleOnlineType()"> フレンドマッチ</label>
+  <label><input type="radio" name="onlineType" value="random" onchange="toggleOnlineType()"> ランダムマッチ</label>
 
-  <div id="createRoomSettings" style="margin-top:10px;">
-    <p>あなたの名前:</p>
-    <input id="onlinePlayerName" placeholder="名前を入力">
-    <p>手番:</p>
-    <label><input type="radio" name="onlineOrder" value="first" checked> 先攻</label>
-    <label><input type="radio" name="onlineOrder" value="second"> 後攻</label>
-    <p>合言葉:</p>
-    <input id="roomKeyInput" placeholder="合言葉を入力">
+  <div id="friendMatchSettings" style="display:none; margin-top:10px;">
+    <p>部屋の設定:</p>
+    <label><input type="radio" name="onlineAction" value="create"  onchange="toggleOnlineSettings()"> 部屋を作る</label>
+    <label><input type="radio" name="onlineAction" value="join" onchange="toggleOnlineSettings()"> 部屋に入る</label>
+
+    <div id="createRoomSettings" style="margin-top:10px;">
+      <p>あなたの名前:</p>
+      <input id="onlinePlayerName" placeholder="名前を入力">
+      <p>手番:</p>
+      <label><input type="radio" name="onlineOrder" value="first" > 先攻</label>
+      <label><input type="radio" name="onlineOrder" value="second"> 後攻</label>
+      <p>合言葉:</p>
+      <input id="roomKeyInput" placeholder="合言葉を入力">
+    </div>
+
+    <div id="joinRoomSettings" style="display:none; margin-top:10px;">
+      <p>あなたの名前:</p>
+      <input id="onlinePlayerNameJoin" placeholder="名前を入力">
+      <p>合言葉:</p>
+      <input id="roomKeyJoinInput" placeholder="合言葉を入力">
+    </div>
   </div>
 
-  <div id="joinRoomSettings" style="display:none; margin-top:10px;">
-    <p>あなたの名前:</p>
-    <input id="onlinePlayerNameJoin" placeholder="名前を入力">
-    <p>合言葉:</p>
-    <input id="roomKeyJoinInput" placeholder="合言葉を入力">
+  <div id="randomMatchSettings" style="display:none; margin-top:10px;">
+    <p>あなたの名前（省略可）:</p>
+    <input id="randomPlayerName" placeholder="名前を入力（省略可）">
+    <p style="color:#888; font-size:13px;">※先攻・後攻はランダムで決まります</p>
   </div>
-</div> 
+</div>
   
   
 <br><br> 
@@ -515,6 +528,12 @@ function toggleTurnSelect(){
   document.getElementById("onlineSettings").style.display = isOnline ? "block" : "none";
 }
 
+function toggleOnlineType(){
+  const type = document.querySelector('input[name="onlineType"]:checked').value;
+  document.getElementById("friendMatchSettings").style.display = (type === "friend") ? "block" : "none";
+  document.getElementById("randomMatchSettings").style.display = (type === "random") ? "block" : "none";
+}
+
 function toggleOnlineSettings(){
   const action = document.querySelector('input[name="onlineAction"]:checked').value;
   document.getElementById("createRoomSettings").style.display = (action === "create") ? "block" : "none";
@@ -640,17 +659,38 @@ let playerBName = "B";
 let humanFirst = true; // 先攻フラグ
   
 function startGame(){
-mode=document.querySelector('input[name="mode"]:checked').value;
-  
- if(mode === "online"){
-    const action = document.querySelector('input[name="onlineAction"]:checked').value;
-    if(action === "create"){
-      createRoom();
-    } else {
-      joinRoom();
+  const modeRadio = document.querySelector('input[name="mode"]:checked');
+  if(!modeRadio){ alert("モードを選択してください"); return; }
+  mode = modeRadio.value;
+
+  if(mode === "online"){
+    const typeRadio = document.querySelector('input[name="onlineType"]:checked');
+    if(!typeRadio){ alert("フレンドマッチかランダムマッチを選んでください"); return; }
+    if(typeRadio.value === "random"){
+      joinRandomMatch();
+      return;
     }
+    const actionRadio = document.querySelector('input[name="onlineAction"]:checked');
+    if(!actionRadio){ alert("部屋を作るか部屋に入るかを選んでください"); return; }
+    const orderRadio = document.querySelector('input[name="onlineOrder"]:checked');
+    if(actionRadio.value === "create" && !orderRadio){ alert("手番を選択してください"); return; }
+    if(actionRadio.value === "create"){ createRoom(); } else { joinRoom(); }
     return;
-  }  
+  }
+
+  if(mode === "ai"){
+    const orderRadio = document.querySelector('input[name="order"]:checked');
+    if(!orderRadio){ alert("手番を選択してください"); return; }
+  }
+
+  if(mode === "human"){
+    const humanOrderRadio = document.querySelector('input[name="humanOrder"]:checked');
+    if(!humanOrderRadio){ alert("先攻を選択してください"); return; }
+    const useTimerRadio = document.querySelector('input[name="useTimer"]:checked');
+    if(!useTimerRadio){ alert("時間制限を選択してください"); return; }
+  }
+  
+
   
 aiStrength=parseInt(document.getElementById("aiStrength").value);
 if(mode==="ai"){
@@ -1593,6 +1633,25 @@ currentPlayerDisplay.textContent = myRole === "second" ? myName : opponentName;
 };
   resultFooter.appendChild(retry);
   
+  if(mode === "online" && isRandomMatch){
+  const newMatch = document.createElement("button");
+  newMatch.textContent = "別の対戦相手を探す";
+  newMatch.onclick = () => {
+    overlay.classList.remove("show","lose","win");
+    if(roomUnsubscribe){
+      roomUnsubscribe();
+      roomUnsubscribe = null;
+    }
+    window._update(window._ref(window._db, `rooms/${roomKey}`), {
+      status: "opponent_left"
+    });
+    gameOver = false;
+    disconnectAlerted = false;
+    joinRandomMatch();
+  };
+  resultFooter.appendChild(newMatch);
+}
+  
 // AIモードのときのみ「結果をシェア」ボタンを追加
   if (mode === "ai") {
     const shareBtn = document.createElement("button");
@@ -1636,12 +1695,22 @@ currentPlayerDisplay.textContent = myRole === "second" ? myName : opponentName;
   // --- タイトルへ戻るボタン ---
   const back = document.createElement("button");
   back.textContent = "タイトルへ戻る";
- back.onclick = () => {
-    overlay.classList.remove("show","lose","win");
-    hideWaiting();
-    document.getElementById("gamePage").style.display = "none";
-    document.getElementById("modePage").style.display = "block";
-  };
+back.onclick = () => {
+  if(mode === "online"){
+    window._update(window._ref(window._db, `rooms/${roomKey}`), {
+      status: "opponent_left"
+    });
+    if(roomUnsubscribe){
+      roomUnsubscribe();
+      roomUnsubscribe = null;
+    }
+  }
+  overlay.classList.remove("show","lose","win");
+  hideWaiting();
+  document.getElementById("chatBox").innerHTML = "";
+  document.getElementById("gamePage").style.display = "none";
+  document.getElementById("modePage").style.display = "block";
+};
   resultFooter.appendChild(back);
 
 
@@ -1956,6 +2025,8 @@ function waitForOpponent(){
   const onValue = window._onValue;
 
   showWaiting("相手の入室を待っています...");
+  const oldDeclineBtn = document.getElementById("declineBtn");
+  if(oldDeclineBtn) oldDeclineBtn.remove();
 
   const roomRef = ref(db, `rooms/${roomKey}/status`);
   const unsubscribe = onValue(roomRef, (snapshot) => {
@@ -2051,22 +2122,31 @@ function listenToRoom(){
     const data = snapshot.val();
     if(!data) return;
 
-    if(data.disconnected){
-      const opponentRole = myRole === "first" ? "second" : "first";
-      if(data.disconnected[opponentRole] && !gameOver && !disconnectAlerted){
-        disconnectAlerted = true;
-        alert("相手が退出しました。タイトルに戻ります。");
-         if(roomUnsubscribe){
-    roomUnsubscribe();
-    roomUnsubscribe = null;
-  }
-  document.getElementById("resultOverlay").classList.remove("show","lose","win");
-  hideWaiting();
-  document.getElementById("gamePage").style.display = "none";
-  document.getElementById("modePage").style.display = "block";
+ if(data.disconnected){
+  const opponentRole = myRole === "first" ? "second" : "first";
+  if(data.disconnected[opponentRole] && !disconnectAlerted){
+    disconnectAlerted = true;
+    if(gameOver){
+      // リザルト画面表示中 → そのまま表示、再戦ボタンだけ無効化
+      alert("相手が退出しました。");
+      document.querySelectorAll(".resultFooter button").forEach(btn => {
+        if(btn.textContent === "再戦") btn.disabled = true;
+      });
+    } else {
+      // ゲーム中 → タイトルに戻る
+      alert("相手が退出しました。タイトルに戻ります。");
+      if(roomUnsubscribe){
+        roomUnsubscribe();
+        roomUnsubscribe = null;
       }
+      document.getElementById("resultOverlay").classList.remove("show","lose","win");
+      hideWaiting();
+      document.getElementById("gamePage").style.display = "none";
+      document.getElementById("modePage").style.display = "block";
     }
-
+  }
+}
+    
     if(data.board){
       for(let i = 0; i < 49; i++){
         board.children[i].textContent = data.board[i] || "";
@@ -2094,9 +2174,21 @@ if(data.status === "ready" && !gameOver){
       hideWaiting();
     }
     
-    if(data.firstChar){
-      board.children[24].textContent = data.firstChar;
-    }
+ if(data.status === "opponent_left" && gameOver){
+  alert("相手が退出しました。");
+  if(roomUnsubscribe){
+    roomUnsubscribe();
+    roomUnsubscribe = null;
+  }
+  // リザルト画面はそのまま、再戦ボタンだけ無効化
+  document.querySelectorAll(".resultFooter button").forEach(btn => {
+    if(btn.textContent === "再戦") btn.disabled = true;
+  });
+}
+if(data.firstChar){
+  board.children[24].textContent = data.firstChar;
+}    
+ 
 
     const myRoleTurn = (data.currentTurn === myRole);
     isMyTurn = myRoleTurn;
@@ -2107,24 +2199,63 @@ if(data.status === "rematch_requested" && gameOver){
     window._pendingRematch();
     return;
   }
-      showWaiting("相手が再戦を希望しています", true);
-     window._pendingRematch = () => {
-  gameOver = false;
-  disconnectAlerted = false;
+  showWaiting("相手が再戦を希望しています", true);
+
+  window._pendingRematch = () => {
+    gameOver = false;
+    disconnectAlerted = false;
+    window._pendingRematch = null;
+    const overlay = document.getElementById("resultOverlay");
+    overlay.classList.remove("show","lose","win");
+    createBoard();
+    document.getElementById("firstCharInput").disabled = myRole !== "second";
+    document.getElementById("firstCharInput").value = "";
+    document.getElementById("wordInput").value = "";
+    currentPlayerDisplay.textContent = myRole === "second" ? myName : opponentName;
+    window._update(window._ref(window._db, `rooms/${roomKey}`), {
+      status: "ready"
+    });
+    listenToRoom();
+  };
+
+  if(!document.getElementById("declineBtn")){
+    const declineBtn = document.createElement("button");
+    declineBtn.id = "declineBtn";
+    declineBtn.textContent = "拒否する";
+    declineBtn.style.cssText = "background:#e74c3c; color:white;";
+   declineBtn.onclick = () => {
+  if(!confirm("本当に拒否しますか？")) return;
   window._pendingRematch = null;
-  const overlay = document.getElementById("resultOverlay");
-  overlay.classList.remove("show","lose","win");
-  createBoard();
-  document.getElementById("firstCharInput").disabled = myRole !== "second";
-  document.getElementById("firstCharInput").value = "";
-  document.getElementById("wordInput").value = "";
-  currentPlayerDisplay.textContent = myRole === "second" ? myName : opponentName;
-  window._update(window._ref(window._db, `rooms/${roomKey}`), {
-    status: "ready"
-  });
-  listenToRoom();
-};
-    }
+      document.getElementById("declineBtn").remove();
+      window._update(window._ref(window._db, `rooms/${roomKey}`), {
+        status: "rematch_declined"
+      });
+      hideWaiting();
+      if(roomUnsubscribe){
+        roomUnsubscribe();
+        roomUnsubscribe = null;
+      }
+      document.getElementById("chatBox").innerHTML = "";
+      document.getElementById("resultOverlay").classList.remove("show","lose","win");
+      document.getElementById("gamePage").style.display = "none";
+      document.getElementById("modePage").style.display = "block";
+    };
+    document.getElementById("waitingOkBtn").insertAdjacentElement("afterend", declineBtn);
+  }
+}
+    
+if(data.status === "rematch_declined" && !gameOver){
+  alert("再戦を拒否されました。タイトルに戻ります。");
+  if(roomUnsubscribe){
+    roomUnsubscribe();
+    roomUnsubscribe = null;
+  }
+  document.getElementById("chatBox").innerHTML = "";
+  document.getElementById("resultOverlay").classList.remove("show","lose","win");
+  hideWaiting();
+  document.getElementById("gamePage").style.display = "none";
+  document.getElementById("modePage").style.display = "block";
+}    
   
     if(data.result && !gameOver){
       const iWin = data.result.winner === myRole;
@@ -2159,7 +2290,105 @@ if(data.chat){
   });
 }
 
-  
+ 
+let randomMatchUnsubscribe = null;
+let isRandomMatch = false;  
+
+function joinRandomMatch(){
+  isRandomMatch = true;
+const oldDeclineBtn = document.getElementById("declineBtn");
+if(oldDeclineBtn) oldDeclineBtn.remove();
+  const db = window._db;
+  const ref = window._ref;
+  const get = window._get;
+  const set = window._set;
+  const update = window._update;
+  const onValue = window._onValue;
+  const remove = window._remove;
+
+  const nameInput = document.getElementById("randomPlayerName").value.trim();
+  myName = nameInput || ("プレイヤー" + Math.floor(Math.random() * 9000 + 1000));
+
+  const waitingRef = ref(db, "matchmaking/waiting");
+
+  get(waitingRef).then(snapshot => {
+    const waiting = snapshot.val();
+
+    
+    if(waiting && waiting.uid && waiting.uid !== myName){
+  opponentName = waiting.name || "対戦相手";
+  roomKey = waiting.uid;
+
+  // 待機側が決めた役割の逆を取る
+  myRole = waiting.role === "first" ? "second" : "first";
+
+  remove(waitingRef);
+
+  update(ref(db, `rooms/${roomKey}`), {
+    status: "ready",
+    first: myRole === "first" ? { name: myName } : { name: opponentName },
+    second: myRole === "second" ? { name: myName } : { name: opponentName }
+  });
+
+      hideWaiting();
+      startOnlineGame();
+
+    } else {
+      // 待機中の相手がいない → 自分が待機
+      myRole = Math.random() < 0.5 ? "first" : "second";
+      roomKey = "random_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+
+      set(waitingRef, {
+        uid: roomKey,
+        name: myName,
+        role: myRole,
+        timestamp: Date.now()
+      });
+      window._onDisconnect(waitingRef).remove(); 
+
+      set(ref(db, `rooms/${roomKey}`), {
+        status: "waiting",
+        first: myRole === "first" ? { name: myName } : null,
+        second: myRole === "second" ? { name: myName } : null,
+        board: Array(49).fill(""),
+        lastIndex: 24,
+        lastChar: "",
+        firstChar: "",
+        usedWords: [],
+        currentTurn: "first",
+        log: [],
+        moveHistory: []
+      });
+
+      showWaiting("対戦相手を探しています...\nしばらくお待ちください");
+
+      const okBtn = document.getElementById("waitingOkBtn");
+      okBtn.textContent = "キャンセル";
+      okBtn.style.display = "inline-block";
+      window._pendingRematch = () => {
+        if(randomMatchUnsubscribe){
+          randomMatchUnsubscribe();
+          randomMatchUnsubscribe = null;
+        }
+        remove(waitingRef);
+        remove(ref(db, `rooms/${roomKey}`));
+        hideWaiting();
+      };
+
+      randomMatchUnsubscribe = onValue(ref(db, `rooms/${roomKey}/status`), (snap) => {
+        if(snap.val() === "ready"){
+          if(randomMatchUnsubscribe){
+            randomMatchUnsubscribe();
+            randomMatchUnsubscribe = null;
+          }
+          remove(waitingRef);
+          hideWaiting();
+          startOnlineGame();
+        }
+      });
+    }
+  });
+}  
   
   
   
